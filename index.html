@@ -1,0 +1,336 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Schema Upgrades In A Continuous Delivery Environment</title>
+
+<link rel="stylesheet" href="css/reveal.css">
+<link rel="stylesheet" href="css/theme/night.css">
+
+<!-- Theme used for syntax highlighting of code -->
+<link rel="stylesheet" href="lib/css/zenburn.css">
+
+<!-- Printing and PDF exports -->
+<script>
+	var link = document.createElement('link');
+	link.rel = 'stylesheet';
+	link.type = 'text/css';
+	link.href = window.location.search.match(/print-pdf/gi) ? 'css/print/pdf.css'
+			: 'css/print/paper.css';
+	document.getElementsByTagName('head')[0].appendChild(link);
+</script>
+</head>
+<body>
+	<div class="reveal">
+		<div class="slides">
+			<section>
+				<h2>Schema Upgrades In A Continuous Delivery Environment</h2>
+				<br /> <br />
+				<h3>David Buschman</h3>
+				<h3>Technical Lead, Timeli Inc.</h3>
+			</section>
+			<section>
+				<h2>Summary</h2>
+				<p>You have a 24/7/365 environment up and running with dozens of services and dozens on instances for each. Everything is going
+					well. Then, a new feature is required and it requires change to one of your datastores. Since you have a few dozen instances of that
+					service running, you need to perform a rolling upgrade on that service. In this talk, we will discuss some strategies to allow such
+					schemas upgrades to be possible.</p>
+			</section>
+			<section>
+				<h2>Reactive Credentials</h2>
+				<br />
+				<ul>
+					<li class="fragment">Microservices - 15 apps, 5 apps serve the public API</li>
+					<li class="fragment">App Types - Real-Time Streaming, CRUD, Batch Processing</li>
+					<li class="fragment">Reactive Platform - Scala, Akka, Play, Akka Streams</li>
+					<li class="fragment">AWS - VPC - 100% Docker Containers</li>
+					<li class="fragment">DataStores
+						<ul>
+							<b>Kafka</b> - Data In Motion
+						</ul>
+						<ul>
+							<b>MongoDB</b> - Tenant State ( CRUD )
+						</ul>
+						<ul>
+							<b>Cassandra</b> - Time Series Data
+						</ul>
+					</li>
+					<li class="fragment">Load/Stress Testing - 1 Million Measurements/Second</li>
+				</ul>
+			</section>
+			<section>
+				<h2>Updating legacy monoliths</h2>
+				<ul>
+					<li class="fragment">Long development cycles</li>
+					<li class="fragment">Complex testing, if any testing</li>
+					<li class="fragment">Use a down page to block consumers</li>
+					<li class="fragment">Take the database offline, back it up, upgrade it, ...</li>
+					<li class="fragment">Install new application code</li>
+					<li class="fragment">Start everything back up</li>
+					<li class="fragment">Its like throwing mash potatoes on the wall and hoping it sticks.</li>
+				</ul>
+			</section>
+			<section>
+				<h2>What wrong with this approach</h2>
+				<ul>
+					<li class="fragment">Too many things changing all at once.</li>
+					<li class="fragment">Modifying code and data stores at the same time</li>
+					<li class="fragment">Incur higher-risks due to increased chances of rollbacks</li>
+					<li class="fragment">“Cost” of rollback in terms of management confidence</li>
+					<li class="fragment">We are our own self-inflicted Chaos Monkey</li>
+				</ul>
+			</section>
+			<section>
+				<h2>Topics for a new strategy</h2>
+				<ol>
+					<li class="fragment">Continuous delivery for fast and reliable changes</li>
+					<li class="fragment">Rules for making and deploying changes</li>
+					<li class="fragment">Baby steps - a sequence of steps</li>
+					<li class="fragment">TODO - Try very hard to not be your own Chaos Monkey</li>
+				</ol>
+			</section>
+			<section>
+				<h2>
+					Continuous delivery <br /> for fast and reliable changes
+				</h2>
+				<ul>
+					<li class="fragment">Deploy in hours and days, not weeks or months</li>
+					<li class="fragment">This forces updates to be small, and thus small risk</li>
+					<li class="fragment">Automated builds and testing validate non breaking changes</li>
+					<li class="fragment">"Schema Changes as Code"</li>
+				</ul>
+			</section>
+			<section>
+				<h2>Rule for deploying changes</h2>
+				<ul>
+					<li class="fragment">Only deploy 1 small change at a time</li>
+					<li class="fragment">Applies to code and datastore</li>
+					<li class="fragment">Datastore - always asynchronous, in the background</li>
+					<li class="fragment">Two approaches for delivering changes
+						<ol>
+							<li class="fragment">Run inside the micro service app itself, upon startup</li>
+							<li class="fragment">Separate one-and-done “micro-app” - 12 factor apps - #12</li>
+						</ol>
+				</ul>
+				<aside class="notes">domain objects and schemas - sometimes that have to change together. Only update the domain model, no data
+					in column</aside>
+			</section>
+			<section>
+				<h2>Baby steps</h2>
+				<h3>a sequence of steps</h3>
+				<h3 style="text-align: left;">Each Step Must :</h3>
+				<ol>
+					<li class="fragment">Compatibility - Be backwards compatible to the previous step</li>
+					<li class="fragment">Accuracy - Have verifiable accuracy</li>
+					<li class="fragment">Simple - Be small and easy to implement</li>
+					<li class="fragment">Back out - Have a simple recovery or blackout plan</li>
+				</ol>
+			</section>
+			<section>
+				<h2>Schema Upgrade Task</h2>
+				<ul>
+					<li>Replace legacy Crypto library for OAuth secrets.</li>
+					<li>Apply to all existing Tenants and new ones</li>
+					<li>Remove old data when complete</li>
+					<li class="fragment">This will take 6 steps to complete</li>
+				</ul>
+				<p>
+			</section>
+			<section>
+				<h2>Step 1&nbsp;&nbsp;( D )&nbsp;&nbsp;New Column</h2>
+				<div class="stretch" width="100%">
+					<div class="fragment">
+						<h4 style="text-align: left;">Before - reads - old column,&nbsp;&nbsp;&nbsp;&nbsp; writes - old column</h4>
+						<pre><code class="scala" data-trim>
+case class Tenant(_id: UUID, clientSecret: String)
+
+{ "_id" : "...", "clientSecret" : "..." }
+</code></pre>
+					</div>
+					<div class="fragment">
+						<h4 style="text-align: left;">After - reads - old column,&nbsp;&nbsp;&nbsp;&nbsp; writes - old column</h4>
+						<pre><code class="scala" data-trim>
+case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]) 
+
+{ "_id" : "...", "clientSecret" : "..." }
+</code></pre>
+					</div>
+					<div class="fragment">
+						<div></div>
+						<ul>
+							<li>Compatibility - no data is lost, new column not in play</li>
+							<li>Accuracy - unit tests on domain object</li>
+							<li>Simple - very small code change</li>
+							<li>Back out - restore domain object to "before" case</li>
+						</ul>
+					</div>
+				</div>
+			</section>
+			<section>
+				<h2>Step 2&nbsp;&nbsp;( C )&nbsp;&nbsp;New Crypto</h2>
+				<div class="strecth" width="100%">
+					<h4 style="text-align: left;">Before - reads - old column,&nbsp;&nbsp;&nbsp;&nbsp; writes - old column</h4>
+					<pre><code class="scala" data-trim>
+case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]) 
+
+{ "_id" : "...", "clientSecret" : "..." }
+</code></pre>
+					<h4 style="text-align: left;">After - reads - new then old,&nbsp;&nbsp;&nbsp;&nbsp; writes - new column</h4>
+					<pre><code class="scala" data-trim>
+case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]) { 
+    def getSecret: String = secret orElse clientSecret get
+}
+{ "_id" : "...", "clientSecret" : "..." }
+{ "_id" : "...", "clientSecret" : "...", "secret" : "..." }
+</code></pre>
+				</div>
+				<div class="stretch" style="overflow: auto; width: 100%;">
+					<div></div>
+					<ul>
+						<li>Compatibility - no data is lost, both columns in play</li>
+						<li>Accuracy - unit tests on domain object and crypto matching</li>
+						<li>Simple - very small code change</li>
+						<li>Back out - restore domain object to "before" case</li>
+					</ul>
+				</div>
+				<p style="clear: both">&nbsp;</p>
+			</section>
+			<section>
+				<h2>Step 3&nbsp;&nbsp;( D )&nbsp;&nbsp;Encrypt all secrets</h2>
+				<p>Write schema upgrade to re-encrypt all secrets in datastore</p>
+				<ol>
+					<li>Get all Tenant data where secret column is empty</li>
+					<li>De-crypt clientSecret and re-encrypt using new algorithm</li>
+					<li>Update Tenants with new value where secret is empty</li>
+				</ol>
+				<pre><code class="scala" data-trim>
+case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]) { 
+    def getSecret: String = secret orElse clientSecret get
+}
+
+{ "_id" : "...", "clientSecret" : "...", "secret" : "..." }
+</code></pre>
+				<ul>
+					<li>Compatibility - no data is lost, new column now populated</li>
+					<li>Accuracy - query database by hand, verify no missing data</li>
+					<li>Simple - just the code to populate the new column</li>
+					<li>Back out - none, if previous step worked, this will too</li>
+				</ul>
+			</section>
+			<section>
+				<h2>Step 4&nbsp;&nbsp;( C )&nbsp;&nbsp;Remove Field</h2>
+				<div class="strecth" width="100%">
+					<h4 style="text-align: left;">Before - reads - new then old,&nbsp;&nbsp;&nbsp;&nbsp; writes - new column</h4>
+					<pre><code class="scala" data-trim>
+case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]) { 
+    def getSecret: String = secret orElse clientSecret get
+}
+{ "_id" : "...", "clientSecret" : "...", "secret" : "..." }
+</code></pre>
+					<h4 style="text-align: left;">After - reads - new column,&nbsp;&nbsp;&nbsp;&nbsp; writes - new column</h4>
+					<pre><code class="scala" data-trim>
+case class Tenant(_id: UUID, secret: String)
+
+{ "_id" : "...", "clientSecret" : "...", "secret" : "..." }
+</code></pre>
+				</div>
+				<div class="stretch" style="overflow: auto; width: 100%;">
+					<div></div>
+					<ul>
+						<li>Compatibility - no data is lost, new column now in play</li>
+						<li>Accuracy - unit tests on domain object</li>
+						<li>Simple - very small code change</li>
+						<li>Back out - restore domain object to "before" case</li>
+					</ul>
+				</div>
+				<p style="clear: both">&nbsp;</p>
+			</section>
+			<section>
+				<h2>Step 5&nbsp;&nbsp;( D )&nbsp;&nbsp;Remove column</h2>
+				<p>Remove data from old column where new column data exists</p>
+				<h4 style="text-align: left;">Before - reads - new,&nbsp;&nbsp;&nbsp;&nbsp; writes - new</h4>
+				<pre><code class="scala" data-trim>
+case class Tenant(_id: UUID, secret: String)
+
+{ "_id" : "...", "clientSecret" : "...", "secret" : "..." }
+</code></pre>
+				<h4 style="text-align: left;">After - reads - new,&nbsp;&nbsp;&nbsp;&nbsp; writes - new</h4>
+				<pre><code class="scala" data-trim>
+case class Tenant(_id: UUID, secret: String)
+
+{ "_id" : "...", "secret" : "..." }
+</code></pre>
+				<ul>
+					<li>Compatibility - only data that is not used is removed</li>
+					<li>Accuracy - only data removed is verified to be stale</li>
+					<li>Simple - just the code to populate the new column</li>
+					<li>Back out - none needed, all removed data is not used</li>
+				</ul>
+			</section>
+
+			<section>
+				<h2>Step 6&nbsp;&nbsp;( C )&nbsp;&nbsp;Delete old Crypto</h2>
+				<p>Change app to remove old crypto algorithm and jar(s).</p>
+				<br /> <pre><code class="scala" data-trim>
+case class Tenant(_id: UUID, secret: String)
+
+{ "_id" : "...", "secret" : "..." }
+</code></pre>
+				<ul>
+					<li>Compatibility - removing code that is not active</li>
+					<li>Simple - very small code change</li>
+					<li>Accuracy - unit tests on domain object</li>
+					<li>Back out - none needed</li>
+				</ul>
+
+			</section>
+			<section>
+				<h2>Use case (LONG TERM)</h2>
+				<ul>
+					<li class="fragment">upgrade encryption algorithm of passwords for all existing users</li>
+					<li class="fragment">"encryption" is a one-way hashing algorithm</li>
+					<li class="fragment">cannot simple re-encrypt the already hashed passwords</li>
+					<li class="fragment">So, how do we do this?</li>
+					<li class="fragment">When a user successfully logs in, we use that password to encrypt<br /> using the new algorithm, both
+						algorithms for read.
+					</li>
+					<li class="fragment">We wait 180 days.</li>
+					<li class="fragment">Hash all expired passwords using random UUIDs</li>
+					<li class="fragment">Remove old hashing algorithm and jar(s)</li>
+				</ul>
+			</section>
+			<section>
+				<h2>Thank You</h2>
+			</section>
+		</div>
+	</div>
+
+	<script src="lib/js/head.min.js"></script>
+	<script src="js/reveal.js"></script>
+
+	<script>
+		// More info https://github.com/hakimel/reveal.js#configuration
+		Reveal.initialize({
+			history : true,
+
+			// More info https://github.com/hakimel/reveal.js#dependencies
+			dependencies : [ {
+				src : 'plugin/markdown/marked.js'
+			}, {
+				src : 'plugin/markdown/markdown.js'
+			}, {
+				src : 'plugin/notes/notes.js',
+				async : true
+			}, {
+				src : 'plugin/highlight/highlight.js',
+				async : true,
+				callback : function() {
+					hljs.initHighlightingOnLoad();
+				}
+			} ]
+		});
+	</script>
+</body>
+</html>
