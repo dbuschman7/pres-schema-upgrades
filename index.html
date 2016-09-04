@@ -29,117 +29,202 @@
 				<h2>Schema Upgrades In A Continuous Delivery Environment</h2>
 				<br /> <br />
 				<h3>David Buschman</h3>
-				<h3>Technical Lead, Timeli Inc.</h3>
+				<h3>Technical Lead, Timeli.io</h3>
 			</section>
 			<section>
-				<h2>Summary</h2>
-				<p>You have a 24/7/365 environment up and running with dozens of services and dozens on instances for each. Everything is going
-					well. Then, a new feature is required and it requires change to one of your datastores. Since you have a few dozen instances of that
-					service running, you need to perform a rolling upgrade on that service. In this talk, we will discuss some strategies to allow such
-					schemas upgrades to be possible.</p>
+				<div class="stretch">
+
+					<div style="float: left; text-align: left;">
+						<h2>The Problem</h2>
+					</div>
+					<div style="float: right">
+						<img class="stretch" style="border: 0px; background: rgba(255, 255, 255, 0); box-shadow: 0 0 10px rgba(0, 0, 0, 0);" height="100%"
+							data-src="topologies.png" alt="Database Diagrams">
+					</div>
+				</div>
+
+				<aside class="notes">
+					Ignore Colors<br /> Can represent many topologies<br /> Stay Generic - hold questions<br />Rolling Upgrades<br /> Split State -
+					half upgraded<br /> Consider this scenerio<br /> Old and new apps must handle this<br /> Top More Difficult, example<br />
+
+
+				</aside>
 			</section>
 			<section>
 				<h2>Reactive Credentials</h2>
-				<br />
-				<ul>
-					<li class="fragment">Microservices - 15 apps, 5 apps serve the public API</li>
-					<li class="fragment">App Types - Real-Time Streaming, CRUD, Batch Processing</li>
-					<li class="fragment">Reactive Platform - Scala, Akka, Play, Akka Streams</li>
-					<li class="fragment">AWS - VPC - 100% Docker Containers</li>
-					<li class="fragment">DataStores
-						<ul>
-							<b>Kafka</b> - Data In Motion
-						</ul>
-						<ul>
-							<b>MongoDB</b> - Tenant State ( CRUD )
-						</ul>
-						<ul>
-							<b>Cassandra</b> - Time Series Data
-						</ul>
-					</li>
-					<li class="fragment">Load/Stress Testing - 1 Million Measurements/Second</li>
-				</ul>
+				<table class="stretch">
+					<tr>
+						<th>Timeline</th>
+						<td>July 2015</td>
+						<td>July 2016</td>
+					</tr>
+					<tr>
+						<th>Architecture</th>
+						<td>JEE - Tomcat</td>
+						<td>15 Microservices, 5 in API</td>
+					</tr>
+					<tr>
+						<th>Frameworks</th>
+						<td>JPA, Spring&nbsp;Integration</td>
+						<td>Scala, Play, Akka&nbsp;Streams</td>
+					</tr>
+					<tr>
+						<th>Messaging</th>
+						<td>RabbitMQ</td>
+						<td>Kafka</td>
+					</tr>
+					<tr>
+						<th>Processing</th>
+						<td>Queued Batches</td>
+						<td>Reactive Streams</td>
+					</tr>
+					<tr>
+						<th>Datastores</th>
+						<td>MySQL, Cassandra</td>
+						<td>MongoDB, Cassandra</td>
+					</tr>
+					<tr>
+						<th>DevOps</th>
+						<td>GCP - VMs - SSH deploy</td>
+						<td>AWS VPC - 100% Docker</td>
+					</tr>
+					<tr class="fragment">
+						<th>Load/Stress</th>
+						<td>1000s Meas / Sec</td>
+						<td>1 Million Meas / Sec</td>
+					</tr>
+					<tr class="fragment">
+						<th>People</th>
+						<td>6+ JEE Developers</td>
+						<td>2.5 Scala Developers</td>
+					</tr>
+				</table>
+				<aside class="notes">Point out couple of things, build</aside>
+
 			</section>
 			<section>
 				<h2>Updating legacy monoliths</h2>
 				<ul>
-					<li class="fragment">Long development cycles</li>
-					<li class="fragment">Complex testing, if any testing</li>
-					<li class="fragment">Use a down page to block consumers</li>
+					<li class="fragment">Long development and release cycles</li>
+					<li class="fragment">Complex testing, if any testing for older products</li>
+					<li class="fragment">Use a down page to block requests and warn consumers</li>
 					<li class="fragment">Take the database offline, back it up, upgrade it, ...</li>
 					<li class="fragment">Install new application code</li>
-					<li class="fragment">Start everything back up</li>
+					<li class="fragment">Start everything back up and start praying for no rollback</li>
 					<li class="fragment">Its like throwing mash potatoes on the wall and hoping it sticks.</li>
 				</ul>
+				<aside class="notes"></aside>
+
 			</section>
 			<section>
 				<h2>What wrong with this approach</h2>
 				<ul>
 					<li class="fragment">Too many things changing all at once.</li>
 					<li class="fragment">Modifying code and data stores at the same time</li>
+					<li class="fragment">Stored procedures - wrong place for business logic</li>
 					<li class="fragment">Incur higher-risks due to increased chances of rollbacks</li>
 					<li class="fragment">“Cost” of rollback in terms of management confidence</li>
 					<li class="fragment">We are our own self-inflicted Chaos Monkey</li>
 				</ul>
+				<aside class="notes"></aside>
+
 			</section>
 			<section>
-				<h2>Topics for a new strategy</h2>
+				<h2>3 Topics to Guide us</h2>
 				<ol>
 					<li class="fragment">Continuous delivery for fast and reliable changes</li>
-					<li class="fragment">Rules for making and deploying changes</li>
+					<li class="fragment">Rules for deploying changes</li>
+					<li class="fragment">Special Note about Relational Databases</li>
 					<li class="fragment">Baby steps - a sequence of steps</li>
-					<li class="fragment">TODO - Try very hard to not be your own Chaos Monkey</li>
+					<li class="fragment">Don't Panic if you brought your towel</li>
 				</ol>
+				<aside class="notes"></aside>
+
 			</section>
 			<section>
 				<h2>
-					Continuous delivery <br /> for fast and reliable changes
+					1. Continuous delivery <br /> for fast and reliable changes
 				</h2>
-				<ul>
-					<li class="fragment">Deploy in hours and days, not weeks or months</li>
-					<li class="fragment">This forces updates to be small, and thus small risk</li>
-					<li class="fragment">Automated builds and testing validate non breaking changes</li>
-					<li class="fragment">"Schema Changes as Code"</li>
+				<ul class="stretch">
+					<li class="fragment">Deploy iterations are in hours and NOT weeks, months or years</li>
+					<li class="fragment">Automated builds and testing to validate non breaking changes</li>
+					<li class="fragment">Fast deploys force updates to be small, and thus a smaller risk</li>
+					<li class="fragment">Version Control
+						<ul>
+							<li>Applications "as Code"</li>
+							<li>Infrastructure "as Code"</li>
+							<li class="fragment">Schema Changes "as Code"</li>
+						</ul>
+					<li class="fragment">Version Control - EVERYTHING!</li>
+
 				</ul>
+				<aside class="notes">DBA, your mouth is talking. You might wanna look to that.</aside>
+
 			</section>
 			<section>
-				<h2>Rule for deploying changes</h2>
+				<h2>2. Rules for deploying changes</h2>
 				<ul>
 					<li class="fragment">Only deploy 1 small change at a time</li>
-					<li class="fragment">Applies to code and datastore</li>
-					<li class="fragment">Datastore - always asynchronous, in the background</li>
+					<li class="fragment">Only change application code or a datastore, not both</li>
+					<li class="fragment">DRY Violations - ORM frameworks and DDL</li>
+					<li class="fragment">Relational - stored procedures violate rules #2</li>
+					<li class="fragment">Datastores - always update asynchronously</li>
+					<li class="fragment">Work very hard to not be our own Chaos Monkey</li>
 					<li class="fragment">Two approaches for delivering changes
-						<ol>
+						<ul>
 							<li class="fragment">Run inside the micro service app itself, upon startup</li>
-							<li class="fragment">Separate one-and-done “micro-app” - 12 factor apps - #12</li>
-						</ol>
+							<li class="fragment">12 factor apps <span class="fragment"><br /> #12 Run admin/management tasks as one-off processes</span></li>
+						</ul>
 				</ul>
-				<aside class="notes">domain objects and schemas - sometimes that have to change together. Only update the domain model, no data
-					in column</aside>
+				<aside class="notes">
+					Caveat - ORM and Schema - DRY violations . Only update the domain model, no data in column<br />
+				</aside>
 			</section>
 			<section>
-				<h2>Baby steps</h2>
-				<h3>a sequence of steps</h3>
-				<h3 style="text-align: left;">Each Step Must :</h3>
-				<ol>
-					<li class="fragment">Compatibility - Be backwards compatible to the previous step</li>
-					<li class="fragment">Accuracy - Have verifiable accuracy</li>
-					<li class="fragment">Simple - Be small and easy to implement</li>
-					<li class="fragment">Back out - Have a simple recovery or blackout plan</li>
-				</ol>
+				<div class="stretch">
+					<div style="float: left; text-align: left;">
+						<h2>3. Special</h2>
+						<h2>Note</h2>
+						<h2>about</h2>
+						<h2>Relational</h2>
+						<h2>Databases</h2>
+					</div>
+					<div style="float: right">
+						<img class="stretch" height="100%" data-src="refactoring_databases.jpeg" alt="Refactoring Databases: Evolutionary Database Design">
+					</div>
+				</div>
+				<aside class="notes"></aside>
 			</section>
 			<section>
-				<h2>Schema Upgrade Task</h2>
+				<div class="stretch">
+					<h2>4. Baby steps - a sequence</h2>
+					<h4 style="text-align: left;">Each Step Must :</h4>
+					<ol>
+						<li class="fragment">Compatibility - Be backwards compatible to the previous step</li>
+						<li class="fragment">Accuracy - Have verifiable accuracy</li>
+						<li class="fragment">Simple - Be small and easy to implement</li>
+						<li class="fragment">Back out - Have a simple recovery or blackout plan</li>
+					</ol>
+				</div>
+				<aside class="notes">
+					The Third Topic is number 4 because it has 4 rules<br />
+					<br />Backout plan verifies each step
+				</aside>
+
+			</section>
+			<section>
+				<h2>Example Schema Upgrade</h2>
 				<ul>
-					<li>Replace legacy Crypto library for OAuth secrets.</li>
+					<li>Replace legacy Crypto library for OAuth client secrets.</li>
 					<li>Apply to all existing Tenants and new ones</li>
 					<li>Remove old data when complete</li>
 					<li class="fragment">This will take 6 steps to complete</li>
 				</ul>
-				<p>
+
+				<aside class="notes">unfortunately, step 1 is complicated</aside>
 			</section>
 			<section>
-				<h2>Step 1&nbsp;&nbsp;( D )&nbsp;&nbsp;New Column</h2>
+				<h2>Step 1&nbsp;&nbsp;( D/C )&nbsp;&nbsp;New Column</h2>
 				<div class="stretch" width="100%">
 					<div class="fragment">
 						<h4 style="text-align: left;">Before - reads - old column,&nbsp;&nbsp;&nbsp;&nbsp; writes - old column</h4>
@@ -152,7 +237,9 @@ case class Tenant(_id: UUID, clientSecret: String)
 					<div class="fragment">
 						<h4 style="text-align: left;">After - reads - old column,&nbsp;&nbsp;&nbsp;&nbsp; writes - old column</h4>
 						<pre><code class="scala" data-trim>
-case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]) 
+case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]) {
+    def getSecret: String = clientSecret get
+}
 
 { "_id" : "...", "clientSecret" : "..." }
 </code></pre>
@@ -167,113 +254,144 @@ case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]
 						</ul>
 					</div>
 				</div>
+				<aside class="notes">
+					If using a relational database<br />Need to disable ORM validation<br />Also change domain model <br />
+					<br /> use getSecret field<br />create a typo if needed
+				</aside>
+
 			</section>
 			<section>
 				<h2>Step 2&nbsp;&nbsp;( C )&nbsp;&nbsp;New Crypto</h2>
 				<div class="strecth" width="100%">
-					<h4 style="text-align: left;">Before - reads - old column,&nbsp;&nbsp;&nbsp;&nbsp; writes - old column</h4>
-					<pre><code class="scala" data-trim>
-case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]) 
+					<div class="fragment">
+						<h4 style="text-align: left;">Before - reads - old column,&nbsp;&nbsp;&nbsp;&nbsp; writes - old column</h4>
+						<pre><code class="scala" data-trim>
+case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]) {
+    def getSecret: String = clientSecret get
+}
 
 { "_id" : "...", "clientSecret" : "..." }
 </code></pre>
-					<h4 style="text-align: left;">After - reads - new then old,&nbsp;&nbsp;&nbsp;&nbsp; writes - new column</h4>
-					<pre><code class="scala" data-trim>
+					</div>
+					<div class="fragment">
+						<h4 style="text-align: left;">After - reads - new then old,&nbsp;&nbsp;&nbsp;&nbsp; writes - new and old</h4>
+						<pre><code class="scala" data-trim>
 case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]) { 
     def getSecret: String = secret orElse clientSecret get
 }
 { "_id" : "...", "clientSecret" : "..." }
 { "_id" : "...", "clientSecret" : "...", "secret" : "..." }
 </code></pre>
+					</div>
 				</div>
-				<div class="stretch" style="overflow: auto; width: 100%;">
-					<div></div>
+				<div class="fragment" style="overflow: auto; width: 100%;">
 					<ul>
 						<li>Compatibility - no data is lost, both columns in play</li>
-						<li>Accuracy - unit tests on domain object and crypto matching</li>
-						<li>Simple - very small code change</li>
+						<li>Accuracy - tests on domain object and domain updates</li>
+						<li>Simple - small code change</li>
 						<li>Back out - restore domain object to "before" case</li>
 					</ul>
 				</div>
-				<p style="clear: both">&nbsp;</p>
+				<aside class="notes"></aside>
 			</section>
 			<section>
 				<h2>Step 3&nbsp;&nbsp;( D )&nbsp;&nbsp;Encrypt all secrets</h2>
 				<p>Write schema upgrade to re-encrypt all secrets in datastore</p>
 				<ol>
-					<li>Get all Tenant data where secret column is empty</li>
-					<li>De-crypt clientSecret and re-encrypt using new algorithm</li>
-					<li>Update Tenants with new value where secret is empty</li>
+					<li class="fragment">Get all Tenant data where secret column is empty</li>
+					<li class="fragment">De-crypt clientSecret and re-encrypt using new algorithm</li>
+					<li class="fragment">Update with new value where secret column is empty</li>
 				</ol>
-				<pre><code class="scala" data-trim>
-case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]) { 
-    def getSecret: String = secret orElse clientSecret get
-}
-
-{ "_id" : "...", "clientSecret" : "...", "secret" : "..." }
-</code></pre>
-				<ul>
-					<li>Compatibility - no data is lost, new column now populated</li>
-					<li>Accuracy - query database by hand, verify no missing data</li>
-					<li>Simple - just the code to populate the new column</li>
-					<li>Back out - none, if previous step worked, this will too</li>
-				</ul>
-			</section>
-			<section>
-				<h2>Step 4&nbsp;&nbsp;( C )&nbsp;&nbsp;Remove Field</h2>
-				<div class="strecth" width="100%">
-					<h4 style="text-align: left;">Before - reads - new then old,&nbsp;&nbsp;&nbsp;&nbsp; writes - new column</h4>
+				<div class="fragment">
 					<pre><code class="scala" data-trim>
 case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]) { 
     def getSecret: String = secret orElse clientSecret get
 }
-{ "_id" : "...", "clientSecret" : "...", "secret" : "..." }
-</code></pre>
-					<h4 style="text-align: left;">After - reads - new column,&nbsp;&nbsp;&nbsp;&nbsp; writes - new column</h4>
-					<pre><code class="scala" data-trim>
-case class Tenant(_id: UUID, secret: String)
 
 { "_id" : "...", "clientSecret" : "...", "secret" : "..." }
 </code></pre>
 				</div>
-				<div class="stretch" style="overflow: auto; width: 100%;">
-					<div></div>
+				<div class="fragment">
 					<ul>
-						<li>Compatibility - no data is lost, new column now in play</li>
+						<li>Compatibility - no data is lost, new column now populated</li>
+						<li>Accuracy - query database by hand, verify no missing data</li>
+						<li>Simple - just the code to populate the new column</li>
+						<li>Back out - none, if previous step worked, this will too</li>
+					</ul>
+				</div>
+				<aside class="notes"></aside>
+
+			</section>
+			<section>
+				<h2>Step 4&nbsp;&nbsp;( C )&nbsp;&nbsp;Remove Field</h2>
+				<div class="strecth" width="100%">
+					<div class="fragment">
+						<h4 style="text-align: left;">Before - reads - new then old,&nbsp;&nbsp;&nbsp;&nbsp; writes - new and old</h4>
+						<pre><code class="scala" data-trim>
+case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]) { 
+    def getSecret: String = secret orElse clientSecret get
+}
+{ "_id" : "...", "clientSecret" : "...", "secret" : "..." }
+</code></pre>
+					</div>
+					<div class="fragment">
+						<h4 style="text-align: left;">After - reads - new column,&nbsp;&nbsp;&nbsp;&nbsp; writes - new column</h4>
+						<pre><code class="scala" data-trim>
+case class Tenant(_id: UUID, secret: String)
+
+{ "_id" : "...", "clientSecret" : "...", "secret" : "..." }
+{ "_id" : "...",                         "secret" : "..." }
+</code></pre>
+					</div>
+				</div>
+				<div class="fragment">
+					<ul>
+						<li>Compatibility - no data is lost, new column is in play</li>
 						<li>Accuracy - unit tests on domain object</li>
 						<li>Simple - very small code change</li>
 						<li>Back out - restore domain object to "before" case</li>
 					</ul>
 				</div>
-				<p style="clear: both">&nbsp;</p>
+				<aside class="notes">
+					use secret field<br />create a typo if needed<br/><br/>Relational - issues with DRY Violation
+				</aside>
+
 			</section>
 			<section>
 				<h2>Step 5&nbsp;&nbsp;( D )&nbsp;&nbsp;Remove column</h2>
 				<p>Remove data from old column where new column data exists</p>
-				<h4 style="text-align: left;">Before - reads - new,&nbsp;&nbsp;&nbsp;&nbsp; writes - new</h4>
-				<pre><code class="scala" data-trim>
+				<div class="fragment">
+					<h4 style="text-align: left;">Before - reads - new,&nbsp;&nbsp;&nbsp;&nbsp; writes - new</h4>
+					<pre><code class="scala" data-trim>
 case class Tenant(_id: UUID, secret: String)
 
 { "_id" : "...", "clientSecret" : "...", "secret" : "..." }
+{ "_id" : "...",                         "secret" : "..." }
+
 </code></pre>
-				<h4 style="text-align: left;">After - reads - new,&nbsp;&nbsp;&nbsp;&nbsp; writes - new</h4>
-				<pre><code class="scala" data-trim>
+				</div>
+				<div class="fragment">
+					<h4 style="text-align: left;">After - reads - new,&nbsp;&nbsp;&nbsp;&nbsp; writes - new</h4>
+					<pre><code class="scala" data-trim>
 case class Tenant(_id: UUID, secret: String)
 
 { "_id" : "...", "secret" : "..." }
 </code></pre>
-				<ul>
+				</div>
+				<ul class="fragment">
 					<li>Compatibility - only data that is not used is removed</li>
 					<li>Accuracy - only data removed is verified to be stale</li>
-					<li>Simple - just the code to populate the new column</li>
+					<li>Simple - just the code to clean out the old column</li>
 					<li>Back out - none needed, all removed data is not used</li>
 				</ul>
+				<aside class="notes"></aside>
+
 			</section>
 
 			<section>
 				<h2>Step 6&nbsp;&nbsp;( C )&nbsp;&nbsp;Delete old Crypto</h2>
 				<p>Change app to remove old crypto algorithm and jar(s).</p>
-				<br /> <pre><code class="scala" data-trim>
+				<pre><code class="scala" data-trim>
 case class Tenant(_id: UUID, secret: String)
 
 { "_id" : "...", "secret" : "..." }
@@ -284,25 +402,42 @@ case class Tenant(_id: UUID, secret: String)
 					<li>Accuracy - unit tests on domain object</li>
 					<li>Back out - none needed</li>
 				</ul>
+				<br /> <br /> <br />
+				<h4 class="fragment stretch">Optional, re-activate the ORM->DDL validation</h4>
+				<aside class="notes"></aside>
+
+			</section>
+			<section>
+				<h2>We are Done!</h2>
+				<aside class="notes"></aside>
 
 			</section>
 			<section>
 				<h2>Use case (LONG TERM)</h2>
 				<ul>
-					<li class="fragment">upgrade encryption algorithm of passwords for all existing users</li>
+					<li class="fragment">upgrade "encryption" algorithm of passwords for all users</li>
 					<li class="fragment">"encryption" is a one-way hashing algorithm</li>
-					<li class="fragment">cannot simple re-encrypt the already hashed passwords</li>
+					<li class="fragment">cannot simple "undo" an already hashed password</li>
 					<li class="fragment">So, how do we do this?</li>
-					<li class="fragment">When a user successfully logs in, we use that password to encrypt<br /> using the new algorithm, both
+					<li class="fragment">When a user successfully logs in, we can use that password to <br />re-hash it using the new algorithm, both
 						algorithms for read.
 					</li>
-					<li class="fragment">We wait 180 days.</li>
-					<li class="fragment">Hash all expired passwords using random UUIDs</li>
+					<li class="fragment">Wait for password expiration rules to kick in, 180 days</li>
+					<li class="fragment">Hash passwords using random UUIDs for all expired accounts</li>
 					<li class="fragment">Remove old hashing algorithm and jar(s)</li>
 				</ul>
+				<aside class="notes"></aside>
+
+			</section>
+			<section>
+				<h2>def questions = ???</h2>
+				<aside class="notes"></aside>
+
 			</section>
 			<section>
 				<h2>Thank You</h2>
+				<aside class="notes"></aside>
+
 			</section>
 		</div>
 	</div>
