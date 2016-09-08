@@ -32,25 +32,6 @@
 				<h3>Technical Lead, Timeli.io</h3>
 			</section>
 			<section>
-				<div class="stretch">
-
-					<div style="float: left; text-align: left;">
-						<h2>The Problem</h2>
-					</div>
-					<div style="float: right">
-						<img class="stretch" style="border: 0px; background: rgba(255, 255, 255, 0); box-shadow: 0 0 10px rgba(0, 0, 0, 0);" height="100%"
-							data-src="topologies.png" alt="Database Diagrams">
-					</div>
-				</div>
-
-				<aside class="notes">
-					Ignore Colors<br /> Can represent many topologies<br /> Stay Generic - hold questions<br />Rolling Upgrades<br /> Split State -
-					half upgraded<br /> Consider this scenerio<br /> Old and new apps must handle this<br /> Top More Difficult, example<br />
-
-
-				</aside>
-			</section>
-			<section>
 				<h2>Reactive Credentials</h2>
 				<table class="stretch">
 					<tr>
@@ -123,20 +104,40 @@
 					<li class="fragment">Modifying code and data stores at the same time</li>
 					<li class="fragment">Stored procedures - wrong place for business logic</li>
 					<li class="fragment">Incur higher-risks due to increased chances of rollbacks</li>
-					<li class="fragment">“Cost” of rollback in terms of management confidence</li>
-					<li class="fragment">We are our own self-inflicted Chaos Monkey</li>
+					<li class="fragment">“Cost of management confidence” from rollbacks</li>
+					<li class="fragment">You are our own self-inflicted Chaos Monkey</li>
 				</ul>
 				<aside class="notes"></aside>
 
 			</section>
 			<section>
-				<h2>3 Topics to Guide us</h2>
+				<div class="stretch">
+
+					<div style="float: left; text-align: left;">
+						<h2>The Problem</h2>
+					</div>
+					<div style="float: right">
+						<img class="stretch" style="border: 0px; background: rgba(255, 255, 255, 0); box-shadow: 0 0 10px rgba(0, 0, 0, 0);" height="100%"
+							data-src="topologies.png" alt="Database Diagrams">
+					</div>
+				</div>
+
+				<aside class="notes">
+					Ignore Colors<br /> Can represent many topologies<br /> Stay Generic - hold questions<br />Rolling Upgrades<br /> Split State -
+					half upgraded<br /> Consider this scenerio<br /> Old and new apps must handle this<br /> Top More Difficult, example<br />
+
+
+				</aside>
+			</section>
+
+			<section>
+				<h2>A Trilogy Topics to Guide us</h2>
 				<ol>
 					<li class="fragment">Continuous delivery for fast and reliable changes</li>
 					<li class="fragment">Rules for deploying changes</li>
 					<li class="fragment">Special Note about Relational Databases</li>
 					<li class="fragment">Baby steps - a sequence of steps</li>
-					<li class="fragment">Don't Panic if you brought your towel</li>
+					<li class="fragment">Don't Panic because you brought your towel</li>
 				</ol>
 				<aside class="notes"></aside>
 
@@ -203,12 +204,11 @@
 						<li class="fragment">Compatibility - Be backwards compatible to the previous step</li>
 						<li class="fragment">Accuracy - Have verifiable accuracy</li>
 						<li class="fragment">Simple - Be small and easy to implement</li>
-						<li class="fragment">Back out - Have a simple recovery or blackout plan</li>
+						<li class="fragment">Back out - Have a simple recovery or backout plan</li>
 					</ol>
 				</div>
 				<aside class="notes">
-					The Third Topic is number 4 because it has 4 rules<br />
-					<br />Backout plan verifies each step
+					The Third Topic is number 4 because it has 4 rules<br /> <br />Backout plan verifies each step
 				</aside>
 
 			</section>
@@ -255,8 +255,8 @@ case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]
 					</div>
 				</div>
 				<aside class="notes">
-					If using a relational database<br />Need to disable ORM validation<br />Also change domain model <br />
-					<br /> use getSecret field<br />create a typo if needed
+					If using a relational database<br />Need to disable ORM validation<br />Also change domain model <br /> <br /> use getSecret field<br />create
+					a typo if needed
 				</aside>
 
 			</section>
@@ -353,7 +353,7 @@ case class Tenant(_id: UUID, secret: String)
 					</ul>
 				</div>
 				<aside class="notes">
-					use secret field<br />create a typo if needed<br/><br/>Relational - issues with DRY Violation
+					use secret field<br />create a typo if needed<br /> <br />DRY Violations<br />&nbsp;&nbsp;&nbsp; - domain versus DDL
 				</aside>
 
 			</section>
@@ -413,6 +413,15 @@ case class Tenant(_id: UUID, secret: String)
 
 			</section>
 			<section>
+				<h2>def questions = ???</h2>
+				<aside class="notes"></aside>
+			</section>
+			<section>
+				<h2>Thank You</h2>
+				<aside class="notes"></aside>
+
+			</section>
+			<section>
 				<h2>Use case (LONG TERM)</h2>
 				<ul>
 					<li class="fragment">upgrade "encryption" algorithm of passwords for all users</li>
@@ -426,16 +435,6 @@ case class Tenant(_id: UUID, secret: String)
 					<li class="fragment">Hash passwords using random UUIDs for all expired accounts</li>
 					<li class="fragment">Remove old hashing algorithm and jar(s)</li>
 				</ul>
-				<aside class="notes"></aside>
-
-			</section>
-			<section>
-				<h2>def questions = ???</h2>
-				<aside class="notes"></aside>
-
-			</section>
-			<section>
-				<h2>Thank You</h2>
 				<aside class="notes"></aside>
 
 			</section>
