@@ -30,6 +30,12 @@
 				<br /> <br />
 				<h3>David Buschman</h3>
 				<h3>Technical Lead, Timeli.io</h3>
+				<h4 class="fragment">Leader, Architect, Coder, CI, CD, and DevOps</h4>
+				<aside class="notes">
+					What does Technical Lead really mean?
+					<br /> <br />Those are my jobs on a good day.
+					<br /> <br />At ReactiveSummit, my reactive credentials.
+				</aside>
 			</section>
 			<section>
 				<h2>Reactive Credentials</h2>
@@ -41,7 +47,7 @@
 					</tr>
 					<tr>
 						<th>Architecture</th>
-						<td>JEE - Tomcat</td>
+						<td>JEE - 1 Tomcat app</td>
 						<td>15 Microservices, 5 in API</td>
 					</tr>
 					<tr>
@@ -70,7 +76,7 @@
 						<td>AWS VPC - 100% Docker</td>
 					</tr>
 					<tr class="fragment">
-						<th>Load/Stress</th>
+						<th>Stress/Load</th>
 						<td>1000s Meas / Sec</td>
 						<td>1 Million Meas / Sec</td>
 					</tr>
@@ -111,32 +117,12 @@
 
 			</section>
 			<section>
-				<div class="stretch">
-
-					<div style="float: left; text-align: left;">
-						<h2>The Problem</h2>
-					</div>
-					<div style="float: right">
-						<img class="stretch" style="border: 0px; background: rgba(255, 255, 255, 0); box-shadow: 0 0 10px rgba(0, 0, 0, 0);" height="100%"
-							data-src="topologies.png" alt="Database Diagrams">
-					</div>
-				</div>
-
-				<aside class="notes">
-					Ignore Colors<br /> Can represent many topologies<br /> Stay Generic - hold questions<br />Rolling Upgrades<br /> Split State -
-					half upgraded<br /> Consider this scenerio<br /> Old and new apps must handle this<br /> Top More Difficult, example<br />
-
-
-				</aside>
-			</section>
-
-			<section>
-				<h2>A Trilogy Topics to Guide us</h2>
+				<h2>A Trilogy of Topics to Guide us</h2>
 				<ol>
 					<li class="fragment">Continuous delivery for fast and reliable changes</li>
-					<li class="fragment">Rules for deploying changes</li>
+					<li class="fragment">Guidelines for deploying changes</li>
 					<li class="fragment">Special Note about Relational Databases</li>
-					<li class="fragment">Baby steps - a sequence of steps</li>
+					<li class="fragment">Rules for validating each step</li>
 					<li class="fragment">Don't Panic because you brought your towel</li>
 				</ol>
 				<aside class="notes"></aside>
@@ -163,12 +149,13 @@
 
 			</section>
 			<section>
-				<h2>2. Rules for deploying changes</h2>
+				<h2>2. Guidelines for deploying changes</h2>
 				<ul>
 					<li class="fragment">Only deploy 1 small change at a time</li>
+					<li class="fragment">Execute this as a sequence of small steps</li>
 					<li class="fragment">Only change application code or a datastore, not both</li>
 					<li class="fragment">DRY Violations - ORM frameworks and DDL</li>
-					<li class="fragment">Relational - stored procedures violate rules #2</li>
+					<li class="fragment">Relational - stored procedures violate #3</li>
 					<li class="fragment">Datastores - always update asynchronously</li>
 					<li class="fragment">Work very hard to not be our own Chaos Monkey</li>
 					<li class="fragment">Two approaches for delivering changes
@@ -198,7 +185,7 @@
 			</section>
 			<section>
 				<div class="stretch">
-					<h2>4. Baby steps - a sequence</h2>
+					<h2>4. Rules for validating each step</h2>
 					<h4 style="text-align: left;">Each Step Must :</h4>
 					<ol>
 						<li class="fragment">Compatibility - Be backwards compatible to the previous step</li>
@@ -206,18 +193,38 @@
 						<li class="fragment">Simple - Be small and easy to implement</li>
 						<li class="fragment">Back out - Have a simple recovery or backout plan</li>
 					</ol>
+					<p class="fragment">Note: Number 4 will help you identify if 1 and 3 and correct.</p>
 				</div>
-				<aside class="notes">
-					The Third Topic is number 4 because it has 4 rules<br /> <br />Backout plan verifies each step
-				</aside>
+				<aside class="notes">Backout plan verifies each step</aside>
 
 			</section>
 			<section>
+				<div class="stretch">
+
+					<div style="float: left; text-align: left;">
+						<h2>5. Don't Panic</h2>
+						<p>Think about this scenario</p>
+					</div>
+					<div style="float: right">
+						<img class="stretch" style="border: 0px; background: rgba(255, 255, 255, 0); box-shadow: 0 0 10px rgba(0, 0, 0, 0);" height="100%"
+							data-src="topologies.png" alt="Database Diagrams">
+					</div>
+				</div>
+
+				<aside class="notes">
+					Ignore Colors<br /> Can represent many topologies<br /> Stay Generic - hold questions<br />Rolling Upgrades<br /> Split State -
+					half upgraded<br /> Consider this scenerio<br /> Old and new apps must handle this<br /> Top More Difficult, example<br />
+
+
+				</aside>
+			</section>
+
+			<section>
 				<h2>Example Schema Upgrade</h2>
 				<ul>
-					<li>Replace legacy Crypto library for OAuth client secrets.</li>
-					<li>Apply to all existing Tenants and new ones</li>
-					<li>Remove old data when complete</li>
+					<li class="fragment">Replace legacy Crypto library for OAuth client secrets.</li>
+					<li class="fragment">Apply to all existing Tenants and new ones</li>
+					<li class="fragment">Remove old data when complete</li>
 					<li class="fragment">This will take 6 steps to complete</li>
 				</ul>
 
@@ -255,8 +262,8 @@ case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]
 					</div>
 				</div>
 				<aside class="notes">
-					If using a relational database<br />Need to disable ORM validation<br />Also change domain model <br /> <br /> use getSecret field<br />create
-					a typo if needed
+					D = Database, C = Code <br /> <br />If using a relational database<br />Need to disable ORM validation<br />Also change domain
+					model <br /> <br /> use getSecret field<br />create a typo if needed
 				</aside>
 
 			</section>
@@ -358,10 +365,10 @@ case class Tenant(_id: UUID, secret: String)
 
 			</section>
 			<section>
-				<h2>Step 5&nbsp;&nbsp;( D )&nbsp;&nbsp;Remove column</h2>
+				<h2>Step 5&nbsp;&nbsp;( D )&nbsp;&nbsp;Remove old data</h2>
 				<p>Remove data from old column where new column data exists</p>
 				<div class="fragment">
-					<h4 style="text-align: left;">Before - reads - new,&nbsp;&nbsp;&nbsp;&nbsp; writes - new</h4>
+					<h4 style="text-align: left;">Before - reads - new column,&nbsp;&nbsp;&nbsp;&nbsp; writes - new column</h4>
 					<pre><code class="scala" data-trim>
 case class Tenant(_id: UUID, secret: String)
 
@@ -371,7 +378,7 @@ case class Tenant(_id: UUID, secret: String)
 </code></pre>
 				</div>
 				<div class="fragment">
-					<h4 style="text-align: left;">After - reads - new,&nbsp;&nbsp;&nbsp;&nbsp; writes - new</h4>
+					<h4 style="text-align: left;">After - reads - new column,&nbsp;&nbsp;&nbsp;&nbsp; writes - new column</h4>
 					<pre><code class="scala" data-trim>
 case class Tenant(_id: UUID, secret: String)
 
