@@ -4,7 +4,7 @@ This presentation is a reveal.js app.
 
 You can run it from the link and the top of the repo. 
 
-
+[Schema Upgrades In A Continuous Delivery Environment.pdf]
 
 ## License
 
