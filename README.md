@@ -1,4 +1,4 @@
-# Schema Upgrades in a Continious Delivery Environment
+# Schema Upgrades in a Continuous Delivery Environment
 
 This presentation is a reveal.js app. 
 
