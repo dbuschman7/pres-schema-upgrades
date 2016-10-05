@@ -52,7 +52,7 @@
 					<tr>
 						<th>Architecture</th>
 						<td>JEE - 1 Tomcat app</td>
-						<td>15 Microservices, 5 in API</td>
+						<td>19 Microservices, 6 in API</td>
 					</tr>
 					<tr>
 						<th>Frameworks</th>
@@ -91,7 +91,7 @@
 					</tr>
 				</table>
 				<aside class="notes">
-					Point out couple of things, build<br /> <br />So how did we get here.
+					Point out couple of things, build<br /> <br /><br />Apple Steve Jobs quote<br /><br />So how did we get here.
 				</aside>
 			</section>
 			<section>
@@ -127,7 +127,7 @@
 					<li class="fragment">Continuous delivery for fast and reliable changes</li>
 					<li class="fragment">Guidelines for deploying changes</li>
 					<li class="fragment">Special Note about Relational Databases</li>
-					<li class="fragment">Rules for validating each step</li>
+					<li class="fragment">Rules for validating each step in an Upgrade Saga</li>
 					<li class="fragment">Don't Panic because you brought your towel</li>
 				</ol>
 				<aside class="notes"></aside>
@@ -163,9 +163,9 @@
 					<li class="fragment">Relational - stored procedures violate #3</li>
 					<li class="fragment">Datastores - always update asynchronously</li>
 					<li class="fragment">Work very hard to not be our own Chaos Monkey</li>
-					<li class="fragment">Two approaches for delivering changes
+					<li class="fragment">Two approaches for delivering datastore changes
 						<ul>
-							<li class="fragment">Run inside the micro service app itself, upon startup</li>
+							<li class="fragment">Run inside your app itself, usually upon startup</li>
 							<li class="fragment">12 factor apps <span class="fragment"><br /> #12 Run admin/management tasks as one-off processes</span></li>
 						</ul>
 				</ul>
@@ -230,8 +230,8 @@
 					<li class="fragment">Replace legacy Crypto library for all OAuth client secrets.</li>
 					<li class="fragment">Apply to all existing Tenants and new ones</li>
 					<li class="fragment">Remove old data when complete</li>
-					<li class="fragment">This is a form of the Saga pattern</li>
 					<li class="fragment">This will take 6 steps to complete</li>
+					<li class="fragment">Which means this is a form of the Saga pattern</li>
 				</ul>
 
 				<aside class="notes">
