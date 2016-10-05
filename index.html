@@ -21,6 +21,11 @@
 			: 'css/print/paper.css';
 	document.getElementsByTagName('head')[0].appendChild(link);
 </script>
+<style>
+.reveal pre code {
+	background-color: #161C5A;
+}
+</style>
 </head>
 <body>
 	<div class="reveal">
@@ -32,9 +37,8 @@
 				<h3>Technical Lead, Timeli.io</h3>
 				<h4 class="fragment">Leader, Architect, Coder, CI, CD, and DevOps</h4>
 				<aside class="notes">
-					What does Technical Lead really mean?
-					<br /> <br />Those are my jobs on a good day.
-					<br /> <br />At ReactiveSummit, my reactive credentials.
+					What does Technical Lead really mean? <br /> <br />Those are my jobs on a good day. <br /> <br />At ReactiveSummit, my reactive
+					credentials.
 				</aside>
 			</section>
 			<section>
@@ -86,8 +90,9 @@
 						<td>2.5 Scala Developers</td>
 					</tr>
 				</table>
-				<aside class="notes">Point out couple of things, build</aside>
-
+				<aside class="notes">
+					Point out couple of things, build<br /> <br />So how did we get here.
+				</aside>
 			</section>
 			<section>
 				<h2>Updating legacy monoliths</h2>
@@ -152,7 +157,7 @@
 				<h2>2. Guidelines for deploying changes</h2>
 				<ul>
 					<li class="fragment">Only deploy 1 small change at a time</li>
-					<li class="fragment">Execute this as a sequence of small steps</li>
+					<li class="fragment">Execute this as a sequence of small steps- Saga Pattern</li>
 					<li class="fragment">Only change application code or a datastore, not both</li>
 					<li class="fragment">DRY Violations - ORM frameworks and DDL</li>
 					<li class="fragment">Relational - stored procedures violate #3</li>
@@ -222,13 +227,22 @@
 			<section>
 				<h2>Example Schema Upgrade</h2>
 				<ul>
-					<li class="fragment">Replace legacy Crypto library for OAuth client secrets.</li>
+					<li class="fragment">Replace legacy Crypto library for all OAuth client secrets.</li>
 					<li class="fragment">Apply to all existing Tenants and new ones</li>
 					<li class="fragment">Remove old data when complete</li>
+					<li class="fragment">This is a form of the Saga pattern</li>
 					<li class="fragment">This will take 6 steps to complete</li>
 				</ul>
 
-				<aside class="notes">unfortunately, step 1 is complicated</aside>
+				<aside class="notes">
+					Saga here can represent :<br />&nbsp;CQRS - Long running process management<br />&nbsp;XA - Failure management handling
+				</aside>
+			</section>
+			<section>
+				<img class="stretch" style="border: 0px; background: rgba(255, 255, 255, 0); box-shadow: 0 0 10px rgba(0, 0, 0, 0);"
+					data-src="Saga_Sequence_Diagram.png" alt="Database Diagrams">
+
+				<aside class="notes">D = Database, C = Code</aside>
 			</section>
 			<section>
 				<h2>Step 1&nbsp;&nbsp;( D/C )&nbsp;&nbsp;New Column</h2>
@@ -262,8 +276,8 @@ case class Tenant(_id: UUID, clientSecret: Option[String], secret:Option[String]
 					</div>
 				</div>
 				<aside class="notes">
-					D = Database, C = Code <br /> <br />If using a relational database<br />Need to disable ORM validation<br />Also change domain
-					model <br /> <br /> use getSecret field<br />create a typo if needed
+					D = Database, C = Code <br /><br/>Also change domain model<br /> <br />Disable ORM validation<br /> <br /> use getSecret field<br />create
+					a typo if needed
 				</aside>
 
 			</section>
